@@ -27,13 +27,12 @@ pub struct InitLendingMarket<'info> {
 
 pub fn process_init_lending_market(
     ctx: Context<InitLendingMarket>,
-    owner: Pubkey,
     quote_currency: [u8; 32],
 ) -> ProgramResult {
     let lending_market = &ctx.accounts.lending_market.key();
     ctx.accounts.lending_market.init(InitLendingMarketParams {
         bump_seed: Pubkey::find_program_address(&[lending_market.as_ref()], ctx.program_id).1,
-        owner,
+        owner: ctx.accounts.owner.key(),
         quote_currency,
         token_program_id: ctx.accounts.token_program.key(),
         oracle_program_id: ctx.accounts.oracle.key(),

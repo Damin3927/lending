@@ -16,10 +16,9 @@ pub mod lending_anchor {
 
     pub fn init_lending_market(
         ctx: Context<InitLendingMarket>,
-        owner: Pubkey,
         quote_currency: [u8; 32],
     ) -> ProgramResult {
         msg!("Instruction: Init Lending Market");
-        process_init_lending_market(ctx, owner, quote_currency)
+        process_init_lending_market(ctx, quote_currency)
     }
 }

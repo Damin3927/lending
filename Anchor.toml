@@ -11,4 +11,4 @@ cluster = "localnet"
 wallet = "/Users/damin/.config/solana/id.json"
 
 [scripts]
-test = "yarn run jest"
+test = "yarn run jest --detectOpenHandles"

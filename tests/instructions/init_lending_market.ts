@@ -5,7 +5,7 @@ import { TestLendingMarket } from "../helpers/test_lending_market";
 
 describe("init_lending_market", function () {
   it("succeeds", async function () {
-    let lendingMarket = await TestLendingMarket.init();
+    const lendingMarket = await TestLendingMarket.init();
     lendingMarket.validateState();
   });
 });

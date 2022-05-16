@@ -1,5 +1,5 @@
-import { anchor, connection, program, QUOTE_CURRENCY } from "../common";
-import { readKeypairFile } from "./util";
+import { connection, program, QUOTE_CURRENCY } from "../common";
+import { airdropTo, readKeypairFile } from "./util";
 import { PublicKey, Keypair, Transaction } from "@solana/web3.js";
 import { web3 } from "@project-serum/anchor";
 import { initLendingMarketIx } from "../instructions/init_lending_market";
@@ -16,9 +16,7 @@ export class TestLendingMarket {
 
   static async init() {
     const lendingMarketOwner = readKeypairFile("tests/fixtures/lending_market_owner.json");
-    await connection.confirmTransaction(
-      await connection.requestAirdrop(lendingMarketOwner.publicKey, anchor.web3.LAMPORTS_PER_SOL)
-    );
+    await airdropTo(lendingMarketOwner.publicKey, 1);
     const oracleProgramId = readKeypairFile("tests/fixtures/oracle_program_id.json").publicKey;
 
     const lendingMarketKeypair = Keypair.generate();

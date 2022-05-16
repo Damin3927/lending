@@ -1,12 +1,11 @@
-use anchor_lang::prelude::*;
-use anchor_lang::solana_program::entrypoint::ProgramResult;
-
 pub mod account_data;
 pub mod constants;
 pub mod instructions;
 pub mod utils;
 
 use crate::instructions::init_lending_market::*;
+use anchor_lang::prelude::*;
+use anchor_lang::solana_program::entrypoint::ProgramResult;
 
 declare_id!("Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS");
 

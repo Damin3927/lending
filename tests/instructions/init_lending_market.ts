@@ -2,11 +2,12 @@ import { program } from "../common";
 import { SystemProgram, PublicKey } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { TestLendingMarket } from "../helpers/test_lending_market";
+import { errorOf } from "../helpers/util";
 
 describe("init_lending_market", () => {
   let lendingMarket: TestLendingMarket;
 
-  beforeAll(async () => {
+  beforeEach(async () => {
     lendingMarket = await (await TestLendingMarket.init()).createLendingMarket();
   });
 
@@ -17,13 +18,8 @@ describe("init_lending_market", () => {
   });
 
   describe("when the account has already initialized", () => {
-    it("raises an error", async () => {
-      try {
-        await lendingMarket.createLendingMarket();
-        fail();
-      } catch (err) {
-        expect(err.toString()).toMatch(/custom program error: 0x0/);
-      }
+    it("raises an error", () => {
+      expect(async () => await lendingMarket.createLendingMarket()).rejects.toThrow(errorOf(0));
     });
   });
 });

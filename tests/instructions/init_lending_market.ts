@@ -21,7 +21,9 @@ describe("init_lending_market", () => {
       try {
         await lendingMarket.createLendingMarket();
         fail();
-      } catch {}
+      } catch (err) {
+        expect(err.toString()).toMatch(/custom program error: 0x0/);
+      }
     });
   });
 });

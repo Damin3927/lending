@@ -3,10 +3,26 @@ import { SystemProgram, PublicKey } from "@solana/web3.js";
 import { TOKEN_PROGRAM_ID } from "@solana/spl-token";
 import { TestLendingMarket } from "../helpers/test_lending_market";
 
-describe("init_lending_market", function () {
-  it("succeeds", async function () {
-    const lendingMarket = await TestLendingMarket.init();
-    lendingMarket.validateState();
+describe("init_lending_market", () => {
+  let lendingMarket: TestLendingMarket;
+
+  beforeAll(async () => {
+    lendingMarket = await (await TestLendingMarket.init()).createLendingMarket();
+  });
+
+  describe("proper initialization", () => {
+    it("succeeds", async () => {
+      await lendingMarket.validateState();
+    });
+  });
+
+  describe("when the account has already initialized", () => {
+    it("raises an error", async () => {
+      try {
+        await lendingMarket.createLendingMarket();
+        fail();
+      } catch {}
+    });
   });
 });
 

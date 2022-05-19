@@ -5,7 +5,7 @@ import { LAMPORTS_PER_SOL } from "@solana/web3.js";
 
 export const anchor = _anchor;
 export const program = anchor.workspace.LendingAnchor as _anchor.Program<LendingAnchor>;
-export const provider = anchor.AnchorProvider.env();
+export const provider = program.provider;
 export const connection = provider.connection;
 
 _anchor.setProvider(provider);

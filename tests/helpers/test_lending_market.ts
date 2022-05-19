@@ -6,12 +6,18 @@ import { initLendingMarketIx } from "../instructions/init_lending_market";
 import { IDL } from "../../target/types/lending_anchor";
 
 export class TestLendingMarket {
+  /**
+   * @param keypair - The keypair of this account
+   * @param owner - The owner of this account
+   * @param authority - The owner authority which can add new reserves
+   * @param oracleProgramId - The oracle program id (Pyth)
+   */
   constructor(
-    public pubkey: PublicKey,
-    public owner: Keypair,
-    public authority: PublicKey,
-    public quoteCurrency: number[],
-    public oracleProgramId: PublicKey
+    private readonly keypair: Keypair,
+    public readonly owner: Keypair,
+    public readonly authority: PublicKey,
+    public readonly quoteCurrency: number[],
+    public readonly oracleProgramId: PublicKey
   ) {}
 
   static async init() {
@@ -26,16 +32,8 @@ export class TestLendingMarket {
       program.programId
     );
 
-    const transaction = new Transaction().add(
-      await initLendingMarketIx(lendingMarketOwner.publicKey, QUOTE_CURRENCY, lendingMarketPubkey, oracleProgramId)
-    );
-    transaction.recentBlockhash = (await connection.getLatestBlockhash()).blockhash;
-    transaction.feePayer = lendingMarketOwner.publicKey;
-
-    await web3.sendAndConfirmTransaction(connection, transaction, [lendingMarketOwner, lendingMarketKeypair]);
-
     return new TestLendingMarket(
-      lendingMarketPubkey,
+      lendingMarketKeypair,
       lendingMarketOwner,
       lendingMarketAuthority,
       QUOTE_CURRENCY,
@@ -43,8 +41,18 @@ export class TestLendingMarket {
     );
   }
 
+  async createLendingMarket() {
+    const transaction = new Transaction().add(
+      await initLendingMarketIx(this.owner.publicKey, this.quoteCurrency, this.keypair.publicKey, this.oracleProgramId)
+    );
+    transaction.feePayer = this.owner.publicKey;
+
+    await web3.sendAndConfirmTransaction(connection, transaction, [this.owner, this.keypair]);
+    return this;
+  }
+
   async getState() {
-    return await program.account.lendingMarket.fetch(this.pubkey);
+    return await program.account.lendingMarket.fetch(this.keypair.publicKey);
   }
 
   async validateState() {

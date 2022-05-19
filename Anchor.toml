@@ -1,7 +1,7 @@
 [features]
 seeds = false
 [programs.localnet]
-lending_anchor = "Fg6PaFpoGXkYsidMpWTK6W2BeZ7FEfcYkg476zPFsLnS"
+lending_anchor = "5svw6ndVHyYaUASP5njKKCMM8GiaXGTJZiycw7TGY5Y2"
 
 [registry]
 url = "https://anchor.projectserum.com"
@@ -11,4 +11,4 @@ cluster = "localnet"
 wallet = "~/.config/solana/id.json"
 
 [scripts]
-test = "yarn run jest --detectOpenHandles"
+test = "yarn run jest --detectOpenHandles --runInBand --forceExit"

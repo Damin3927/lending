@@ -1,7 +1,7 @@
 import { TestLendingMarket } from "../helpers/test_lending_market";
 import { Keypair, PublicKey } from "@solana/web3.js";
 import { program } from "../common";
-import { generateWealthKeypair, signatureVerificationError } from "../helpers/util";
+import { generateWealthyKeypair, signatureVerificationError } from "../helpers/util";
 import { customErrorOf } from "../helpers/util";
 
 describe("set_lending_market_owner", () => {
@@ -24,7 +24,7 @@ describe("set_lending_market_owner", () => {
       expect(
         async () =>
           await lendingMarket.setNewOwner(newOwner, {
-            currentOwner: await generateWealthKeypair(),
+            currentOwner: await generateWealthyKeypair(),
           })
       ).rejects.toThrow(customErrorOf("InvalidMarketOwner"));
     });
@@ -35,7 +35,7 @@ describe("set_lending_market_owner", () => {
       expect(
         async () =>
           await lendingMarket.setNewOwner(newOwner, {
-            signer: await generateWealthKeypair(),
+            signer: await generateWealthyKeypair(),
           })
       ).rejects.toThrow(signatureVerificationError);
     });

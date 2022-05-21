@@ -11,7 +11,7 @@ export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve
 export const airdropTo = async (to: PublicKey, sol: number) =>
   await connection.confirmTransaction(await connection.requestAirdrop(to, LAMPORTS_PER_SOL * sol));
 
-export const generateWealthKeypair = async () => {
+export const generateWealthyKeypair = async () => {
   const keypair = Keypair.generate();
   await airdropTo(keypair.publicKey, 100);
   return keypair;

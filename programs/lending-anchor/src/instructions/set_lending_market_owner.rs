@@ -1,6 +1,5 @@
-use anchor_lang::{prelude::*, solana_program::entrypoint::ProgramResult};
-
 use crate::{account_data::lending_market::*, errors::LendingError::*};
+use anchor_lang::prelude::*;
 
 #[derive(Accounts)]
 pub struct SetLendingMarketOwner<'info> {
@@ -12,7 +11,7 @@ pub struct SetLendingMarketOwner<'info> {
 pub fn process_set_lending_market_owner(
     ctx: Context<SetLendingMarketOwner>,
     new_owner: Pubkey,
-) -> ProgramResult {
+) -> Result<()> {
     ctx.accounts.lending_market.owner = new_owner;
     Ok(())
 }

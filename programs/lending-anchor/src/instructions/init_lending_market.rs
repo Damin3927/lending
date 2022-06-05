@@ -1,7 +1,6 @@
-use anchor_lang::{prelude::*, solana_program::entrypoint::ProgramResult};
+use crate::{account_data::lending_market::*, utils::byte_length::ByteLength};
+use anchor_lang::prelude::*;
 use anchor_spl::token::Token;
-
-use crate::{account_data::lending_market::*, utils::account_length::AccountLength};
 
 #[derive(Accounts)]
 pub struct InitLendingMarket<'info> {
@@ -28,7 +27,7 @@ pub struct InitLendingMarket<'info> {
 pub fn process_init_lending_market(
     ctx: Context<InitLendingMarket>,
     quote_currency: [u8; 32],
-) -> ProgramResult {
+) -> Result<()> {
     let lending_market = &ctx.accounts.lending_market.key();
     ctx.accounts.lending_market.init(InitLendingMarketParams {
         bump_seed: Pubkey::find_program_address(&[lending_market.as_ref()], ctx.program_id).1,

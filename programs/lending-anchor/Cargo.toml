@@ -18,3 +18,5 @@ default = []
 [dependencies]
 anchor-lang = "0.24.2"
 anchor-spl = "0.24.2"
+pyth-sdk-solana = "0.4.1"
+bytemuck = "1.9.1"

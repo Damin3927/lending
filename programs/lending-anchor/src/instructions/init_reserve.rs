@@ -26,35 +26,35 @@ pub struct InitReserve<'info> {
     /// Source liquidity token account
     /// $authority can transfer $liquidity_amount.
     #[account(mut)]
-    pub source_liquidity: Account<'info, TokenAccount>,
+    pub source_liquidity: Box<Account<'info, TokenAccount>>,
 
     /// Destination collateral token account
     /// user's collateral token account
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub destination_collateral: Account<'info, TokenAccount>,
+    pub destination_collateral: Box<Account<'info, TokenAccount>>,
 
     /// Reserve account
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub reserve: Account<'info, Reserve>,
+    pub reserve: Box<Account<'info, Reserve>>,
 
     /// Reserve liquidity SPL Token mint
-    pub reserve_liquidity_mint: Account<'info, Mint>,
+    pub reserve_liquidity_mint: Box<Account<'info, Mint>>,
 
     /// Reserve liquidity supply SPL Token account
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub reserve_liquidity_supply: Account<'info, TokenAccount>,
+    pub reserve_liquidity_supply: Box<Account<'info, TokenAccount>>,
 
     /// Reserve liquidity fee receiver
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub reserve_liquidity_fee_receiver: Account<'info, TokenAccount>,
+    pub reserve_liquidity_fee_receiver: Box<Account<'info, TokenAccount>>,
 
     /// Reserve collateral SPL Token mint
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub reserve_collateral_mint: Account<'info, Mint>,
+    pub reserve_collateral_mint: Box<Account<'info, Mint>>,
 
     /// Reserve collateral token supply
     #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
-    pub reserve_collateral_supply: Account<'info, TokenAccount>,
+    pub reserve_collateral_supply: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: Pyth product account
     #[account(
@@ -70,7 +70,7 @@ pub struct InitReserve<'info> {
     pub pyth_price: UncheckedAccount<'info>,
 
     /// Lending market account
-    pub lending_market: Account<'info, LendingMarket>,
+    pub lending_market: Box<Account<'info, LendingMarket>>,
 
     /// CHECK: Derived lending market authority
     #[account(

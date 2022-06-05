@@ -1,6 +1,5 @@
+use crate::{constants::PROGRAM_VERSION, utils::byte_length::ByteLength};
 use anchor_lang::prelude::*;
-
-use crate::{constants::PROGRAM_VERSION, utils::account_length::AccountLength};
 
 #[account]
 pub struct LendingMarket {
@@ -20,7 +19,7 @@ pub struct LendingMarket {
     pub oracle_program_id: Pubkey,
 }
 
-impl AccountLength for LendingMarket {
+impl ByteLength for LendingMarket {
     const LEN: usize = 1 + 1 + 32 + 32 + 32 + 32;
 }
 

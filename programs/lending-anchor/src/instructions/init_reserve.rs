@@ -14,7 +14,10 @@ use crate::{
     require_lt_100, require_lte_100,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token::{mint_to, transfer, Mint, MintTo, Token, TokenAccount, Transfer};
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{mint_to, transfer, Mint, MintTo, Token, TokenAccount, Transfer},
+};
 use pyth_sdk_solana::state::load_product_account;
 
 /// Initializes a new lending market reserve.
@@ -29,8 +32,8 @@ pub struct InitReserve<'info> {
     /// user's collateral token account
     #[account(
         init,
-        token::mint = reserve_collateral_mint,
-        token::authority = user_transfer_authority,
+        associated_token::mint = reserve_collateral_mint,
+        associated_token::authority = user_transfer_authority,
         payer = lending_market_owner,
     )]
     pub destination_collateral: Box<Account<'info, TokenAccount>>,
@@ -122,6 +125,9 @@ pub struct InitReserve<'info> {
     /// token program
     pub token_program: Program<'info, Token>,
 
+    /// associated token program
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
     /// rent sysvar
     pub rent: Sysvar<'info, Rent>,
 }
@@ -153,6 +159,7 @@ pub fn process_init_reserve(
     liquidity_amount: u64,
     config: ReserveConfig,
 ) -> Result<()> {
+    return Ok(());
     require_neq!(
         liquidity_amount,
         0_u64,

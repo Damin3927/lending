@@ -35,8 +35,25 @@ pub mod lending_anchor {
     pub fn init_reserve(
         ctx: Context<InitReserve>,
         liquidity_amount: u64,
-        reserve_config: ReserveConfig,
+        // reserve_config: ReserveConfig,
     ) -> Result<()> {
-        process_init_reserve(ctx, liquidity_amount, reserve_config)
+        process_init_reserve(
+            ctx,
+            liquidity_amount,
+            ReserveConfig {
+                optimal_utilization_rate: 1,
+                loan_to_value_ratio: 1,
+                liquidation_bonus: 1,
+                liquidation_threshold: 1,
+                min_borrow_rate: 1,
+                optimal_borrow_rate: 1,
+                max_borrow_rate: 1,
+                fees: account_data::reserve::reserve_fees::ReserveFees {
+                    borrow_fee_wad: 1,
+                    flash_loan_fee_wad: 1,
+                    host_fee_percentage: 1,
+                },
+            },
+        )
     }
 }

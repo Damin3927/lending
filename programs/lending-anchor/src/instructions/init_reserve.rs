@@ -160,7 +160,6 @@ pub fn process_init_reserve(
     liquidity_amount: u64,
     config: ReserveConfig,
 ) -> Result<()> {
-    return Ok(());
     require_neq!(
         liquidity_amount,
         0_u64,

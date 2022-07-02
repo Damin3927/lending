@@ -1,7 +1,12 @@
 import { TestLendingMarket } from "./test_lending_market";
 import { TestOracle } from "./test_oracle";
 import { connection, program } from "../common";
-import { PublicKey, Keypair, SystemProgram, SYSVAR_RENT_PUBKEY } from "@solana/web3.js";
+import {
+  PublicKey,
+  Keypair,
+  SystemProgram,
+  SYSVAR_RENT_PUBKEY,
+} from "@solana/web3.js";
 import {
   approve,
   ASSOCIATED_TOKEN_PROGRAM_ID,
@@ -65,30 +70,33 @@ export class TestReserve {
     );
 
     // create liquidity host account
-    await createAccount(connection, payer, liquidityMintPubkey, userAccountsOwner.publicKey, liquidityHostKeypair);
+    await createAccount(
+      connection,
+      payer,
+      liquidityMintPubkey,
+      userAccountsOwner.publicKey,
+      liquidityHostKeypair
+    );
 
     const signers = [
       // payer,
       reserveKeypair,
-      // liquiditySupplyKeypair,
-      // liquidityFeeReceiverKeypair,
-      // collateralMintKeypair,
-      // collateralSupplyKeypair,
+      liquiditySupplyKeypair,
+      liquidityFeeReceiverKeypair,
+      collateralMintKeypair,
+      collateralSupplyKeypair,
       lendingMarket.owner,
       userTransferAuthorityKeypair,
     ];
-
-    signers.forEach((signer) => console.log(signer.publicKey.toBase58()));
-
     const accounts = {
       sourceLiquidity: userLiquidityPubkey,
       destinationCollateral: userCollateralTokenKeypair.publicKey,
       reserve: reserveKeypair.publicKey,
       reserveLiquidityMint: liquidityMintPubkey,
-      // reserveLiquiditySupply: liquiditySupplyKeypair.publicKey,
-      // reserveLiquidityFeeReceiver: liquidityFeeReceiverKeypair.publicKey,
-      // reserveCollateralMint: collateralMintKeypair.publicKey,
-      // reserveCollateralSupply: collateralSupplyKeypair.publicKey,
+      reserveLiquiditySupply: liquiditySupplyKeypair.publicKey,
+      reserveLiquidityFeeReceiver: liquidityFeeReceiverKeypair.publicKey,
+      reserveCollateralMint: collateralMintKeypair.publicKey,
+      reserveCollateralSupply: collateralSupplyKeypair.publicKey,
       pythProduct: oracle.productPubkey,
       pythPrice: oracle.pricePubkey,
       lendingMarket: lendingMarket.keypair.publicKey,
@@ -101,12 +109,10 @@ export class TestReserve {
       rent: SYSVAR_RENT_PUBKEY,
     };
 
-    Object.values(accounts).forEach((account) => console.log(account.toBase58()));
-
     // init reserve
     await program.methods
       // @ts-ignore: type completion bug
-      .initReserve(liquidityAmount)
+      .initReserve(liquidityAmount, TEST_RESERVE_CONFIG)
       .accounts(accounts)
       .signers(signers)
       .rpc();
@@ -138,7 +144,9 @@ export class TestReserve {
     expect(reserve.liquidity.mintPubkey).toEqual(this.liquidityMintPubkey);
     expect(reserve.liquidity.supplyPubkey).toEqual(this.liquiditySupplyPubkey);
     expect(reserve.collateral.mintPubkey).toEqual(this.collateralMintPubkey);
-    expect(reserve.collateral.supplyPubkey).toEqual(this.collateralSupplyPubkey);
+    expect(reserve.collateral.supplyPubkey).toEqual(
+      this.collateralSupplyPubkey
+    );
     expect(reserve.config).toEqual(this.config);
     expect(reserve.liquidity.oraclePubkey).toEqual(this.liquidityOraclePubkey);
     expect(reserve.liquidity.cumulativeBorrowRateWads).toBe(new BN(1));

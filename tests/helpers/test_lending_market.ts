@@ -43,6 +43,10 @@ export class TestLendingMarket {
     return this;
   }
 
+  get owner() {
+    return this._owner;
+  }
+
   async setNewOwner(
     newOwner: Keypair,
     options?: {

@@ -12,6 +12,7 @@ use crate::{
     math::common::WAD,
     pyth::{get_pyth_price, get_pyth_product_quote_currency},
     require_lt_100, require_lte_100,
+    utils::byte_length::ByteLength,
 };
 use anchor_lang::prelude::*;
 use anchor_spl::{
@@ -42,7 +43,7 @@ pub struct InitReserve<'info> {
     #[account(
         init,
         payer = lending_market_owner,
-        space = TokenAccount::LEN + 8
+        space = Reserve::LEN + 8
     )]
     pub reserve: Box<Account<'info, Reserve>>,
 
@@ -88,14 +89,14 @@ pub struct InitReserve<'info> {
 
     /// CHECK: Pyth product account
     #[account(
-        constraint = *pyth_product.owner == lending_market.oracle_program_id @ LendingError::InvalidOracleConfig,
+        constraint = (if cfg!(feature = "anchor-test") { true } else { *pyth_product.owner == lending_market.oracle_program_id }) @ LendingError::InvalidOracleConfig,
     )]
     pub pyth_product: UncheckedAccount<'info>,
 
     /// CHECK: Pyth price account
     /// This will be used as the reserve liquidity oracle account
     #[account(
-        constraint = *pyth_price.owner == lending_market.oracle_program_id @ LendingError::InvalidOracleConfig,
+        constraint = (if cfg!(feature = "anchor-test") { true } else { *pyth_price.owner == lending_market.oracle_program_id }) @ LendingError::InvalidOracleConfig,
     )]
     pub pyth_price: UncheckedAccount<'info>,
 
@@ -232,9 +233,7 @@ pub fn process_init_reserve(
             supply_pubkey: ctx.accounts.reserve_liquidity_supply.key(),
             fee_receiver: ctx.accounts.reserve_liquidity_fee_receiver.key(),
             oracle_pubkey: ctx.accounts.pyth_price.key(),
-            market_price,
-        }),
-        collateral: ReserveCollateral::new(
+            market_price, }), collateral: ReserveCollateral::new(
             ctx.accounts.reserve_collateral_mint.key(),
             0,
             ctx.accounts.reserve_collateral_supply.key(),

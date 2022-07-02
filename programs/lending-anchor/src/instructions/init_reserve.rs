@@ -12,11 +12,12 @@ use crate::{
     math::common::WAD,
     pyth::{get_pyth_price, get_pyth_product_quote_currency},
     require_lt_100, require_lte_100,
+    utils::byte_length::ByteLength,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    initialize_account, initialize_mint, mint_to, transfer, InitializeAccount, InitializeMint,
-    Mint, MintTo, Token, TokenAccount, Transfer,
+use anchor_spl::{
+    associated_token::AssociatedToken,
+    token::{mint_to, transfer, Mint, MintTo, Token, TokenAccount, Transfer},
 };
 use pyth_sdk_solana::state::load_product_account;
 
@@ -30,42 +31,72 @@ pub struct InitReserve<'info> {
 
     /// Destination collateral token account
     /// user's collateral token account
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        associated_token::mint = reserve_collateral_mint,
+        associated_token::authority = user_transfer_authority,
+        payer = lending_market_owner,
+    )]
     pub destination_collateral: Box<Account<'info, TokenAccount>>,
 
     /// Reserve account
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        payer = lending_market_owner,
+        space = Reserve::LEN + 8
+    )]
     pub reserve: Box<Account<'info, Reserve>>,
 
     /// Reserve liquidity SPL Token mint
     pub reserve_liquidity_mint: Box<Account<'info, Mint>>,
 
     /// Reserve liquidity supply SPL Token account
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        token::mint = reserve_liquidity_mint,
+        token::authority = lending_market_authority,
+        payer = lending_market_owner,
+    )]
     pub reserve_liquidity_supply: Box<Account<'info, TokenAccount>>,
 
     /// Reserve liquidity fee receiver
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        token::mint = reserve_liquidity_mint,
+        token::authority = lending_market_authority,
+        payer = lending_market_owner,
+    )]
     pub reserve_liquidity_fee_receiver: Box<Account<'info, TokenAccount>>,
 
     /// Reserve collateral SPL Token mint
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        mint::decimals = reserve_liquidity_mint.decimals,
+        mint::authority = lending_market_authority,
+        mint::freeze_authority = lending_market_authority,
+        payer = lending_market_owner,
+    )]
     pub reserve_collateral_mint: Box<Account<'info, Mint>>,
 
     /// Reserve collateral token supply
-    #[account(init, payer = lending_market_owner, space = TokenAccount::LEN + 8)]
+    #[account(
+        init,
+        token::mint = reserve_collateral_mint,
+        token::authority = lending_market_authority,
+        payer = lending_market_owner,
+    )]
     pub reserve_collateral_supply: Box<Account<'info, TokenAccount>>,
 
     /// CHECK: Pyth product account
     #[account(
-        constraint = *pyth_product.owner == lending_market.oracle_program_id @ LendingError::InvalidOracleConfig,
+        constraint = (if cfg!(feature = "anchor-test") { true } else { *pyth_product.owner == lending_market.oracle_program_id }) @ LendingError::InvalidOracleConfig,
     )]
     pub pyth_product: UncheckedAccount<'info>,
 
     /// CHECK: Pyth price account
     /// This will be used as the reserve liquidity oracle account
     #[account(
-        constraint = *pyth_price.owner == lending_market.oracle_program_id @ LendingError::InvalidOracleConfig,
+        constraint = (if cfg!(feature = "anchor-test") { true } else { *pyth_price.owner == lending_market.oracle_program_id }) @ LendingError::InvalidOracleConfig,
     )]
     pub pyth_price: UncheckedAccount<'info>,
 
@@ -95,69 +126,14 @@ pub struct InitReserve<'info> {
     /// token program
     pub token_program: Program<'info, Token>,
 
+    /// associated token program
+    pub associated_token_program: Program<'info, AssociatedToken>,
+
     /// rent sysvar
     pub rent: Sysvar<'info, Rent>,
 }
 
 impl<'info> InitReserve<'info> {
-    pub fn into_initialize_liquidity_supply_ctx(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, InitializeAccount<'info>> {
-        let cpi_accounts = InitializeAccount {
-            account: self.reserve_liquidity_supply.to_account_info(),
-            mint: self.reserve_liquidity_mint.to_account_info(),
-            authority: self.lending_market_authority.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    pub fn into_initialize_liqudity_fee_receiver_ctx(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, InitializeAccount<'info>> {
-        let cpi_accounts = InitializeAccount {
-            account: self.reserve_liquidity_fee_receiver.to_account_info(),
-            mint: self.reserve_liquidity_mint.to_account_info(),
-            authority: self.lending_market_authority.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    pub fn into_initialize_collateral_mint_ctx(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, InitializeMint<'info>> {
-        let cpi_accounts = InitializeMint {
-            mint: self.reserve_collateral_mint.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    pub fn into_initialize_collateral_supply_ctx(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, InitializeAccount<'info>> {
-        let cpi_accounts = InitializeAccount {
-            account: self.reserve_collateral_supply.to_account_info(),
-            mint: self.reserve_collateral_mint.to_account_info(),
-            authority: self.lending_market_authority.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
-    pub fn into_initialize_destination_collateral_ctx(
-        &self,
-    ) -> CpiContext<'_, '_, '_, 'info, InitializeAccount<'info>> {
-        let cpi_accounts = InitializeAccount {
-            account: self.destination_collateral.to_account_info(),
-            mint: self.reserve_collateral_mint.to_account_info(),
-            authority: self.user_transfer_authority.to_account_info(),
-            rent: self.rent.to_account_info(),
-        };
-        CpiContext::new(self.token_program.to_account_info(), cpi_accounts)
-    }
-
     pub fn into_transfer_user_liquidity_to_supply_ctx(
         &self,
     ) -> CpiContext<'_, '_, '_, 'info, Transfer<'info>> {
@@ -256,9 +232,7 @@ pub fn process_init_reserve(
             supply_pubkey: ctx.accounts.reserve_liquidity_supply.key(),
             fee_receiver: ctx.accounts.reserve_liquidity_fee_receiver.key(),
             oracle_pubkey: ctx.accounts.pyth_price.key(),
-            market_price,
-        }),
-        collateral: ReserveCollateral::new(
+            market_price, }), collateral: ReserveCollateral::new(
             ctx.accounts.reserve_collateral_mint.key(),
             0,
             ctx.accounts.reserve_collateral_supply.key(),
@@ -267,24 +241,8 @@ pub fn process_init_reserve(
     });
 
     // 実際にdepositとmintはしていないが，感覚としてはDB上（account上の変数）の値を変更させて同期させている
-    // depositとmintは関数一番下の2つのcpiでやる
+    // depositとmintは下の2つのcpiでやる
     let collateral_amount = ctx.accounts.reserve.deposit_liquidity(liquidity_amount)?;
-
-    // liquidity supplyのaccountの初期化
-    initialize_account(ctx.accounts.into_initialize_liquidity_supply_ctx())?;
-    // liquidity fee receiverの初期化
-    initialize_account(ctx.accounts.into_initialize_liqudity_fee_receiver_ctx())?;
-    // collateral用のmint accountを作る
-    initialize_mint(
-        ctx.accounts.into_initialize_collateral_mint_ctx(),
-        ctx.accounts.reserve_liquidity_mint.decimals,
-        ctx.accounts.lending_market_authority.key,
-        Some(ctx.accounts.lending_market_authority.key),
-    )?;
-    // collateral supplyのaccountの初期化
-    initialize_account(ctx.accounts.into_initialize_collateral_supply_ctx())?;
-    // userのcollateral tokenのaccountを作ってあげる
-    initialize_account(ctx.accounts.into_initialize_destination_collateral_ctx())?;
 
     // userのliquidityをlending_marketが持っているliquidity_supplyに移動
     transfer(

@@ -37,6 +37,10 @@ pub mod lending_anchor {
         liquidity_amount: u64,
         reserve_config: ReserveConfig,
     ) -> Result<()> {
-        process_init_reserve(ctx, liquidity_amount, reserve_config)
+        process_init_reserve(
+            ctx,
+            liquidity_amount,
+            reserve_config,
+        )
     }
 }

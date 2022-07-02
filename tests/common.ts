@@ -1,10 +1,12 @@
 import * as _anchor from "@project-serum/anchor";
-import { LendingAnchor } from "../target/types/lending_anchor";
+import { LendingAnchor, IDL } from "../target/types/lending_anchor";
 import { sleep } from "./helpers/util";
 import { LAMPORTS_PER_SOL } from "@solana/web3.js";
+import { TextEncoder } from "node:util";
 
 export const anchor = _anchor;
 export const program = anchor.workspace.LendingAnchor as _anchor.Program<LendingAnchor>;
+export { IDL, LendingAnchor };
 export const provider = program.provider;
 export const connection = provider.connection;
 

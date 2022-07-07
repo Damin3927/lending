@@ -34,4 +34,7 @@ pub enum LendingError {
 
     #[msg("Insufficient liquidity available")]
     InsufficientLiquidity,
+
+    #[msg("Stale Reserve")]
+    ReserveStale,
 }

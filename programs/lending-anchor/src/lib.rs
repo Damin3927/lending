@@ -8,7 +8,10 @@ pub mod utils;
 
 use crate::{
     account_data::reserve::reserve_config::ReserveConfig,
-    instructions::{init_lending_market::*, init_reserve::*, set_lending_market_owner::*},
+    instructions::{
+        deposit_reserve_liquidity::*, init_lending_market::*, init_reserve::*,
+        set_lending_market_owner::*,
+    },
 };
 use anchor_lang::prelude::*;
 
@@ -37,10 +40,13 @@ pub mod lending_anchor {
         liquidity_amount: u64,
         reserve_config: ReserveConfig,
     ) -> Result<()> {
-        process_init_reserve(
-            ctx,
-            liquidity_amount,
-            reserve_config,
-        )
+        process_init_reserve(ctx, liquidity_amount, reserve_config)
+    }
+
+    pub fn deposit_reserve_liquidity(
+        ctx: Context<DepositReserveLiquidity>,
+        liquidity_amount: u64,
+    ) -> Result<()> {
+        process_deposit_reserve_liquidity(ctx, liquidity_amount)
     }
 }

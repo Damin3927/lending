@@ -57,4 +57,14 @@ impl ReserveCollateral {
 
         Ok(())
     }
+
+    /// collateral をburnする
+    /// total supplyから引く
+    pub fn burn(&mut self, collateral_amount: u64) -> Result<()> {
+        self.mint_total_supply = self
+            .mint_total_supply
+            .checked_sub(collateral_amount)
+            .ok_or(LendingError::MathOverflow)?;
+        Ok(())
+    }
 }

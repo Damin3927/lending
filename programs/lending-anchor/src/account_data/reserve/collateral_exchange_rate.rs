@@ -11,6 +11,12 @@ impl CollateralExchangeRate {
             .checked_div(self.0.into())
             .ok_or(LendingError::InvalidConfig)
     }
+
+    pub fn liquidity_to_collateral(&self, liquidity_amount: u64) -> Result<u64, LendingError> {
+        liquidity_amount
+            .checked_div(self.0.into())
+            .ok_or(LendingError::InvalidConfig)
+    }
 }
 
 impl From<CollateralExchangeRate> for Rate {

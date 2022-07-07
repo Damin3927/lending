@@ -71,7 +71,7 @@ impl Reserve {
     pub fn deposit_liquidity(&mut self, liquidity_amount: u64) -> Result<u64> {
         let collateral_amount = self
             .collateral_exchange_rate()?
-            .collateral_to_liquidity(liquidity_amount)?;
+            .liquidity_to_collateral(liquidity_amount)?;
 
         // liquidityをdeposit
         self.liquidity.deposit(liquidity_amount)?;
@@ -79,6 +79,20 @@ impl Reserve {
         self.collateral.mint(collateral_amount)?;
 
         Ok(collateral_amount)
+    }
+
+    /// collateralをburnしてliquidityを返す
+    pub fn redeem_collateral(&mut self, collateral_amount: u64) -> Result<u64> {
+        let liquidity_amount = self
+            .collateral_exchange_rate()?
+            .collateral_to_liquidity(collateral_amount)?;
+
+        // collateralをburn
+        self.collateral.burn(collateral_amount)?;
+        // liquidityをwithdraw
+        self.liquidity.withdraw(liquidity_amount)?;
+
+        Ok(liquidity_amount)
     }
 
     /// Collateral exchange rateを返す

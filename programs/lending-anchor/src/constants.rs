@@ -11,3 +11,6 @@ pub const PROGRAM_VERSION: u8 = 1;
 pub const INITIAL_COLLATERAL_RATIO: u64 = 1;
 #[constant]
 pub const INITIAL_COLLATERAL_RATE: u64 = INITIAL_COLLATERAL_RATIO * WAD;
+
+#[constant]
+pub const MAX_OBLIGATION_RESERVE: usize = 10;

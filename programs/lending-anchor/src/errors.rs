@@ -40,4 +40,7 @@ pub enum LendingError {
 
     #[msg("Invalid Token Program ID")]
     InvalidTokenProgram,
+
+    #[msg("Obligation Reserve accounts exceeds the limit")]
+    ObligationReserveLimit,
 }

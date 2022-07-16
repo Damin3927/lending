@@ -9,8 +9,8 @@ pub mod utils;
 use crate::{
     account_data::reserve::reserve_config::ReserveConfig,
     instructions::{
-        deposit_reserve_liquidity::*, init_lending_market::*, init_reserve::*,
-        set_lending_market_owner::*,
+        deposit_reserve_liquidity::*, init_lending_market::*, init_obligation::*, init_reserve::*,
+        redeem_reserve_collateral::*, set_lending_market_owner::*,
     },
 };
 use anchor_lang::prelude::*;
@@ -48,5 +48,16 @@ pub mod lending_anchor {
         liquidity_amount: u64,
     ) -> Result<()> {
         process_deposit_reserve_liquidity(ctx, liquidity_amount)
+    }
+
+    pub fn redeem_reserve_collateral(
+        ctx: Context<RedeemReserveCollateral>,
+        collateral_amount: u64,
+    ) -> Result<()> {
+        process_redeem_reserve_collateral(ctx, collateral_amount)
+    }
+
+    pub fn init_obligation(ctx: Context<InitObligation>) -> Result<()> {
+        process_init_obligation(ctx)
     }
 }

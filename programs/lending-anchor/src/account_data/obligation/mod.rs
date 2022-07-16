@@ -5,7 +5,9 @@ use self::{
     obligation_collateral::ObligationCollateral, obligation_liquidity::ObligationLiquidity,
 };
 use crate::{
-    account_data::last_update::LastUpdate, constants::PROGRAM_VERSION,
+    account_data::last_update::LastUpdate,
+    constants::{MAX_OBLIGATION_RESERVE, PROGRAM_VERSION},
+    errors::LendingError,
     utils::byte_length::ByteLength,
 };
 use anchor_lang::prelude::*;
@@ -55,5 +57,32 @@ impl Obligation {
         }
 
         Ok(())
+    }
+
+    pub fn find_or_add_collateral_to_deposits(
+        &mut self,
+        deposit_reserve: Pubkey,
+    ) -> Result<&mut ObligationCollateral> {
+        if let Some(collateral_index) = self.find_collateral_index_in_deposits(deposit_reserve) {
+            return Ok(&mut self.deposits[collateral_index]);
+        }
+
+        if self.deposits.len() + self.borrows.len() >= MAX_OBLIGATION_RESERVE {
+            msg!(
+                "Obligation cannot have more than {} deposits and borrows combined",
+                MAX_OBLIGATION_RESERVE
+            );
+            return Err(LendingError::ObligationReserveLimit.into());
+        }
+
+        let collateral = ObligationCollateral::new(deposit_reserve);
+        self.deposits.push(collateral);
+        Ok(self.deposits.last_mut().unwrap())
+    }
+
+    fn find_collateral_index_in_deposits(&self, deposit_reserve: Pubkey) -> Option<usize> {
+        self.deposits
+            .iter()
+            .position(|collateral| collateral.deposit_reserve == deposit_reserve)
     }
 }

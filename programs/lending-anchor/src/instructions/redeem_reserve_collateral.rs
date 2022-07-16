@@ -3,9 +3,7 @@ use crate::{
     errors::LendingError,
 };
 use anchor_lang::prelude::*;
-use anchor_spl::token::{
-    burn, transfer, Burn, Burn, Mint, Token, TokenAccount, Transfer, Transfer,
-};
+use anchor_spl::token::{burn, transfer, Burn, Mint, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct RedeemReserveCollateral<'info> {
@@ -26,6 +24,7 @@ pub struct RedeemReserveCollateral<'info> {
 
     /// CHECK:
     pub lending_market_authority: UncheckedAccount<'info>,
+    /// CHECK:
     pub user_transfer_authority: UncheckedAccount<'info>,
     pub token_program: Program<'info, Token>,
 }
@@ -90,13 +89,12 @@ pub fn process_redeem_reserve_collateral(
     );
 
     let liquidity_amount = ctx.accounts.reserve.redeem_collateral(collateral_amount)?;
-    reserve.last_update.mark_stale();
-
+    ctx.accounts.reserve.last_update.mark_stale();
     burn(
         ctx.accounts.into_burn_user_collateral_ctx(),
         collateral_amount,
     )?;
-    transfer(ctx.accounts.into_transfer_user_liquidity_ctx(), amount)?;
+    transfer(ctx.accounts.into_transfer_user_liquidity_ctx(), liquidity_amount)?;
 
     Ok(())
 }

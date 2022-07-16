@@ -37,4 +37,7 @@ pub enum LendingError {
 
     #[msg("Stale Reserve")]
     ReserveStale,
+
+    #[msg("Invalid Token Program ID")]
+    InvalidTokenProgram,
 }

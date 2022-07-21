@@ -11,7 +11,7 @@ use crate::{
     instructions::{
         deposit_obligation_collateral::*, deposit_reserve_liquidity::*, init_lending_market::*,
         init_obligation::*, init_reserve::*, redeem_reserve_collateral::*,
-        set_lending_market_owner::*,
+        set_lending_market_owner::*, withdraw_obligation_collateral::*,
     },
 };
 use anchor_lang::prelude::*;
@@ -67,5 +67,12 @@ pub mod lending_anchor {
         collateral_amount: u64,
     ) -> Result<()> {
         process_deposit_obligation_collateral(ctx, collateral_amount)
+    }
+
+    pub fn withdraw_obligation_collateral(
+        ctx: Context<WithdrawObligationCollateral>,
+        collateral_amount: u64,
+    ) -> Result<()> {
+        process_withdraw_obligation_collateral(ctx, collateral_amount)
     }
 }

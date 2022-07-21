@@ -36,6 +36,7 @@ pub struct DepositObligationCollateral<'info> {
     )]
     pub obligation_owner: Signer<'info>,
 
+    /// CHECK:
     pub user_transfer_authority: UncheckedAccount<'info>,
 
     #[account(

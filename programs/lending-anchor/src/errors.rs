@@ -43,4 +43,25 @@ pub enum LendingError {
 
     #[msg("Obligation Reserve accounts exceeds the limit")]
     ObligationReserveLimit,
+
+    #[msg("Stale Obligation")]
+    ObligationStale,
+
+    #[msg("Obligation deposits is empty")]
+    ObligatinoDepositsEmpty,
+
+    #[msg("Obligation deposit amount is zero")]
+    ObligationDepositsZero,
+
+    #[msg("Deposited Obligation Collateral is empty")]
+    ObligationCollateralEmpty,
+
+    #[msg("Obligation collatateral is invalid")]
+    InvalidObligationCollateral,
+
+    #[msg("Withdraw amount is too large")]
+    WithdrawTooLarge,
+
+    #[msg("Withdraw amount is too small")]
+    WithdrawTooSmall,
 }

@@ -8,6 +8,7 @@ use crate::{
     account_data::last_update::LastUpdate,
     constants::{MAX_OBLIGATION_RESERVE, PROGRAM_VERSION},
     errors::LendingError,
+    math::rate::Rate,
     utils::byte_length::ByteLength,
 };
 use anchor_lang::prelude::*;
@@ -48,6 +49,16 @@ impl Obligation {
         self.borrows = params.borrows;
     }
 
+    pub fn withdraw(&mut self, withdraw_amount: u64, collateral_index: usize) -> Result<()> {
+        let collateral = &mut self.deposits[collateral_index];
+        if withdraw_amount == collateral.deposited_amount {
+            self.deposits.remove(collateral_index);
+        } else {
+            collateral.withdraw(withdraw_amount)?;
+        }
+        Ok(())
+    }
+
     pub fn repay(&mut self, settle_amount: u128, liquidity_index: usize) -> Result<()> {
         let liquidity = &mut self.borrows[liquidity_index];
         if settle_amount == liquidity.borrowed_amount_wads {
@@ -63,7 +74,7 @@ impl Obligation {
         &mut self,
         deposit_reserve: Pubkey,
     ) -> Result<&mut ObligationCollateral> {
-        if let Some(collateral_index) = self.find_collateral_index_in_deposits(deposit_reserve) {
+        if let Some(collateral_index) = self._find_collateral_index_in_deposits(deposit_reserve) {
             return Ok(&mut self.deposits[collateral_index]);
         }
 
@@ -80,9 +91,39 @@ impl Obligation {
         Ok(self.deposits.last_mut().unwrap())
     }
 
-    fn find_collateral_index_in_deposits(&self, deposit_reserve: Pubkey) -> Option<usize> {
+    fn _find_collateral_index_in_deposits(&self, deposit_reserve: Pubkey) -> Option<usize> {
         self.deposits
             .iter()
             .position(|collateral| collateral.deposit_reserve == deposit_reserve)
+    }
+
+    pub fn find_collateral_index_in_deposits(
+        &self,
+        deposit_reserve: Pubkey,
+    ) -> Result<(&ObligationCollateral, usize)> {
+        if self.deposits.is_empty() {
+            msg!("Obligation has no deposits");
+            return Err(LendingError::ObligatinoDepositsEmpty.into());
+        }
+        let collateral_index = self
+            ._find_collateral_index_in_deposits(deposit_reserve)
+            .ok_or(LendingError::InvalidObligationCollateral)?;
+        Ok((&self.deposits[collateral_index], collateral_index))
+    }
+
+    /// Calculate the maximum collateral value that can be withdrawn
+    pub fn max_withdraw_value(&self, withdraw_collateral_ltv: Rate) -> Result<u128> {
+        if self.allowed_borrow_value <= self.borrowed_value {
+            return Ok(0);
+        }
+        if withdraw_collateral_ltv == Rate::zero() {
+            return Ok(self.deposited_value);
+        }
+        let ltv: u64 = withdraw_collateral_ltv.into();
+        self.allowed_borrow_value
+            .checked_sub(self.borrowed_value)
+            .ok_or(LendingError::MathOverflow)?
+            .checked_div(ltv as u128)
+            .ok_or(LendingError::MathOverflow.into())
     }
 }

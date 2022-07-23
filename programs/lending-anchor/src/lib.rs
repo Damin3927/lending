@@ -11,7 +11,7 @@ use crate::{
     instructions::{
         borrow_obligation_liquidity::*, deposit_obligation_collateral::*,
         deposit_reserve_liquidity::*, init_lending_market::*, init_obligation::*, init_reserve::*,
-        redeem_reserve_collateral::*, set_lending_market_owner::*,
+        redeem_reserve_collateral::*, repay_obligation_liquidity::*, set_lending_market_owner::*,
         withdraw_obligation_collateral::*,
     },
 };
@@ -82,5 +82,12 @@ pub mod lending_anchor {
         liquidity_amount: u64,
     ) -> Result<()> {
         process_borrow_obligation_liquidity(ctx, liquidity_amount)
+    }
+
+    pub fn repay_obligation_liquidity(
+        ctx: Context<RepayObligationLiquidity>,
+        liquidity_amount: u64,
+    ) -> Result<()> {
+        process_repay_obligation_liquidity(ctx, liquidity_amount)
     }
 }

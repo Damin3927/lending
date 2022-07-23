@@ -76,4 +76,16 @@ pub enum LendingError {
 
     #[msg("Borrow value is too small")]
     BorrowTooSmall,
+
+    #[msg("Obligation borrows is empty")]
+    ObligationBorrowsEmpty,
+
+    #[msg("Obligation liquidity is invalid")]
+    InvalidObligationLiquidity,
+
+    #[msg("Obligation liquidity is empty")]
+    ObligationLiquidityEmpty,
+
+    #[msg("Repay amount is too small")]
+    RepayTooSmall,
 }

@@ -67,6 +67,12 @@ pub struct CalculateBorrowResult {
     pub host_fee: u64,
 }
 
+#[derive(Debug)]
+pub struct CalculateRepayResult {
+    pub settle_amount: u128,
+    pub repay_amount: u64,
+}
+
 impl Reserve {
     pub fn init(&mut self, params: InitReserveParams) {
         self.version = PROGRAM_VERSION;
@@ -166,5 +172,23 @@ impl Reserve {
                 host_fee,
             })
         }
+    }
+
+    pub fn calculate_repay(
+        &self,
+        amount_to_repay: u64,
+        borrowed_amount: u128,
+    ) -> Result<CalculateRepayResult> {
+        let settle_amount = if amount_to_repay == u64::MAX {
+            borrowed_amount
+        } else {
+            (amount_to_repay as u128).min(borrowed_amount)
+        };
+        let repay_amount = settle_amount.try_ceil_u64()?;
+
+        Ok(CalculateRepayResult {
+            settle_amount,
+            repay_amount,
+        })
     }
 }

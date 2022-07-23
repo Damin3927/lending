@@ -134,6 +134,20 @@ impl Obligation {
             .position(|liquidity| liquidity.borrow_reserve == borrow_reserve)
     }
 
+    pub fn find_liquidity_in_borrows(
+        &self,
+        borrow_reserve: Pubkey,
+    ) -> Result<(&ObligationLiquidity, usize)> {
+        require!(
+            !self.borrows.is_empty(),
+            LendingError::ObligationBorrowsEmpty
+        );
+        let liquidity_index = self
+            ._find_liquidity_index_in_borrows(borrow_reserve)
+            .ok_or(LendingError::InvalidObligationLiquidity)?;
+        Ok((&self.borrows[liquidity_index], liquidity_index))
+    }
+
     /// Calculate the maximum collateral value that can be withdrawn
     pub fn max_withdraw_value(&self, withdraw_collateral_ltv: Rate) -> Result<u128> {
         if self.allowed_borrow_value <= self.borrowed_value {

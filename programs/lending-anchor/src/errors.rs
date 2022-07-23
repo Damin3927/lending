@@ -64,4 +64,16 @@ pub enum LendingError {
 
     #[msg("Withdraw amount is too small")]
     WithdrawTooSmall,
+
+    #[msg("Account owner is invalid")]
+    InvalidAccountOwner,
+
+    #[msg("Obligation owner is invalid")]
+    InvalidObligationOwner,
+
+    #[msg("Borrow value is too large")]
+    BorrowTooLarge,
+
+    #[msg("Borrow value is too small")]
+    BorrowTooSmall,
 }

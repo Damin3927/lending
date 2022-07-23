@@ -1,4 +1,4 @@
-use super::common::PERCENT_SCALER;
+use super::common::{PERCENT_SCALER, WAD};
 
 #[derive(Clone, Copy, Debug, Default, PartialEq, PartialOrd, Eq, Ord)]
 pub struct Rate(u128);
@@ -10,6 +10,18 @@ impl Rate {
 
     pub fn zero() -> Self {
         Self(0)
+    }
+
+    pub fn one() -> Self {
+        Self(Self::wad())
+    }
+
+    fn wad() -> u128 {
+        WAD as u128
+    }
+
+    pub fn from_scaled_val(scaled_val: u64) -> Self {
+        Self(u128::from(scaled_val))
     }
 }
 

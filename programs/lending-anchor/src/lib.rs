@@ -9,9 +9,10 @@ pub mod utils;
 use crate::{
     account_data::reserve::reserve_config::ReserveConfig,
     instructions::{
-        deposit_obligation_collateral::*, deposit_reserve_liquidity::*, init_lending_market::*,
-        init_obligation::*, init_reserve::*, redeem_reserve_collateral::*,
-        set_lending_market_owner::*, withdraw_obligation_collateral::*,
+        borrow_obligation_liquidity::*, deposit_obligation_collateral::*,
+        deposit_reserve_liquidity::*, init_lending_market::*, init_obligation::*, init_reserve::*,
+        redeem_reserve_collateral::*, set_lending_market_owner::*,
+        withdraw_obligation_collateral::*,
     },
 };
 use anchor_lang::prelude::*;
@@ -74,5 +75,12 @@ pub mod lending_anchor {
         collateral_amount: u64,
     ) -> Result<()> {
         process_withdraw_obligation_collateral(ctx, collateral_amount)
+    }
+
+    pub fn borrow_obligation_liquidity(
+        ctx: Context<BorrowObligationLiquidity>,
+        liquidity_amount: u64,
+    ) -> Result<()> {
+        process_borrow_obligation_liquidity(ctx, liquidity_amount)
     }
 }

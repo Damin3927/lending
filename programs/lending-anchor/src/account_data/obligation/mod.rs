@@ -111,6 +111,29 @@ impl Obligation {
         Ok((&self.deposits[collateral_index], collateral_index))
     }
 
+    pub fn find_or_add_liquidity_to_borrows(
+        &mut self,
+        borrow_reserve: Pubkey,
+    ) -> Result<&mut ObligationLiquidity> {
+        if let Some(liquidity_index) = self._find_liquidity_index_in_borrows(borrow_reserve) {
+            return Ok(&mut self.borrows[liquidity_index]);
+        }
+        require_gt!(
+            MAX_OBLIGATION_RESERVE,
+            self.deposits.len() + self.borrows.len(),
+            LendingError::ObligationReserveLimit
+        );
+        let liquidity = ObligationLiquidity::new(borrow_reserve);
+        self.borrows.push(liquidity);
+        Ok(self.borrows.last_mut().unwrap())
+    }
+
+    pub fn _find_liquidity_index_in_borrows(&self, borrow_reserve: Pubkey) -> Option<usize> {
+        self.borrows
+            .iter()
+            .position(|liquidity| liquidity.borrow_reserve == borrow_reserve)
+    }
+
     /// Calculate the maximum collateral value that can be withdrawn
     pub fn max_withdraw_value(&self, withdraw_collateral_ltv: Rate) -> Result<u128> {
         if self.allowed_borrow_value <= self.borrowed_value {
@@ -124,6 +147,12 @@ impl Obligation {
             .checked_sub(self.borrowed_value)
             .ok_or(LendingError::MathOverflow)?
             .checked_div(ltv as u128)
+            .ok_or(LendingError::MathOverflow.into())
+    }
+
+    pub fn remaining_borrow_value(&self) -> Result<u128> {
+        self.allowed_borrow_value
+            .checked_sub(self.borrowed_value)
             .ok_or(LendingError::MathOverflow.into())
     }
 }

@@ -10,10 +10,12 @@ use crate::{
         reserve::{
             collateral_exchange_rate::CollateralExchangeRate,
             reserve_collateral::ReserveCollateral, reserve_config::ReserveConfig,
-            reserve_liquidity::ReserveLiquidity,
+            reserve_fees::FeeCalculation, reserve_liquidity::ReserveLiquidity,
         },
     },
     constants::PROGRAM_VERSION,
+    errors::LendingError,
+    math::common::Decimal,
     utils::byte_length::ByteLength,
 };
 use anchor_lang::{prelude::*, solana_program::clock::Slot};
@@ -55,6 +57,14 @@ pub struct InitReserveParams {
 
     /// Reserve configuration values
     pub config: ReserveConfig,
+}
+
+#[derive(Debug)]
+pub struct CalculateBorrowResult {
+    pub borrow_amount: u128,
+    pub receive_amount: u64,
+    pub borrow_fee: u64,
+    pub host_fee: u64,
 }
 
 impl Reserve {
@@ -99,5 +109,62 @@ impl Reserve {
     pub fn collateral_exchange_rate(&self) -> Result<CollateralExchangeRate> {
         let total_liquidity = self.liquidity.total_supply()?;
         self.collateral.exchange_rate(total_liquidity)
+    }
+
+    pub fn calculate_borrow(
+        &self,
+        amount_to_borrow: u64,
+        max_borrow_value: u128,
+    ) -> Result<CalculateBorrowResult> {
+        let decimals = 10u64
+            .checked_pow(self.liquidity.mint_decimals as u32)
+            .ok_or(LendingError::MathOverflow)?;
+        if amount_to_borrow == u64::MAX {
+            let borrow_amount = max_borrow_value
+                .checked_mul(decimals.into())
+                .ok_or(LendingError::MathOverflow)?
+                .checked_div(self.liquidity.market_price)
+                .ok_or(LendingError::MathOverflow)?
+                .min(self.liquidity.available_amount.into());
+
+            let (borrow_fee, host_fee) = self
+                .config
+                .fees
+                .calculate_borrow_fees(amount_to_borrow as u128, FeeCalculation::Inclusive)?;
+            let receive_amount = borrow_amount
+                .try_floor_u64()?
+                .checked_sub(borrow_fee)
+                .ok_or(LendingError::MathOverflow)?;
+
+            Ok(CalculateBorrowResult {
+                borrow_amount,
+                receive_amount,
+                borrow_fee,
+                host_fee,
+            })
+        } else {
+            let receive_amount = amount_to_borrow;
+            let borrow_amount = receive_amount as u128;
+            let (borrow_fee, host_fee) = self
+                .config
+                .fees
+                .calculate_borrow_fees(borrow_amount, FeeCalculation::Exclusive)?;
+
+            let borrow_amount = borrow_amount
+                .checked_add(borrow_fee as u128)
+                .ok_or(LendingError::MathOverflow)?;
+            let borrow_value = borrow_amount
+                .checked_mul(self.liquidity.market_price)
+                .ok_or(LendingError::MathOverflow)?
+                .checked_div(decimals as u128)
+                .ok_or(LendingError::MathOverflow)?;
+            require_gte!(max_borrow_value, borrow_value, LendingError::BorrowTooLarge);
+            Ok(CalculateBorrowResult {
+                borrow_amount,
+                receive_amount,
+                borrow_fee,
+                host_fee,
+            })
+        }
     }
 }

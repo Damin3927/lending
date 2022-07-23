@@ -1,4 +1,4 @@
-use crate::{errors::LendingError, math::common::WAD, utils::byte_length::ByteLength};
+use crate::{errors::LendingError, math::common::{WAD, Decimal}, utils::byte_length::ByteLength};
 use anchor_lang::prelude::*;
 
 #[derive(Clone, Copy, Debug, Default, AnchorSerialize, AnchorDeserialize)]
@@ -99,6 +99,17 @@ impl ReserveLiquidity {
             .available_amount
             .checked_sub(liquidity_amount)
             .ok_or(LendingError::MathOverflow)?;
+
+        Ok(())
+    }
+
+    pub fn borrow_(&mut self, borrow_decimal: u128) -> Result<()> {
+        let borrow_amount = borrow_decimal.try_floor_u64()?;
+        require_gte!(self.available_amount, borrow_amount, LendingError::InsufficientLiquidity);
+
+        self.available_amount.checked_sub(borrow_amount).ok_or(LendingError
+            ::MathOverflow)?;
+        self.borrowed_amount_wads = self.borrowed_amount_wads.checked_add(borrow_decimal).ok_or(LendingError::MathOverflow)?;
 
         Ok(())
     }

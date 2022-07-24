@@ -232,7 +232,9 @@ pub fn process_init_reserve(
             supply_pubkey: ctx.accounts.reserve_liquidity_supply.key(),
             fee_receiver: ctx.accounts.reserve_liquidity_fee_receiver.key(),
             oracle_pubkey: ctx.accounts.pyth_price.key(),
-            market_price, }), collateral: ReserveCollateral::new(
+            market_price,
+        }),
+        collateral: ReserveCollateral::new(
             ctx.accounts.reserve_collateral_mint.key(),
             0,
             ctx.accounts.reserve_collateral_supply.key(),

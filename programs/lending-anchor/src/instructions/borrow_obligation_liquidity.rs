@@ -14,23 +14,23 @@ pub struct BorrowObligationLiquidity<'info> {
     #[account(
         constraint = source_liquidity.key() == borrow_reserve.liquidity.supply_pubkey @ LendingError::InvalidAccountInput,
     )]
-    pub source_liquidity: Account<'info, TokenAccount>,
+    pub source_liquidity: Box<Account<'info, TokenAccount>>,
 
     #[account(
         constraint = destination_liuqidity.key() != borrow_reserve.liquidity.supply_pubkey @ LendingError::InvalidAccountInput,
     )]
-    pub destination_liuqidity: Account<'info, TokenAccount>,
+    pub destination_liuqidity: Box<Account<'info, TokenAccount>>,
 
     #[account(
         constraint = borrow_reserve.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
         constraint = !borrow_reserve.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ReserveStale,
     )]
-    pub borrow_reserve: Account<'info, Reserve>,
+    pub borrow_reserve: Box<Account<'info, Reserve>>,
 
     #[account(
         constraint = borrow_reserve_liquidity_fee_receiver.key() == borrow_reserve.liquidity.fee_receiver @ LendingError::InvalidAccountInput,
     )]
-    pub borrow_reserve_liquidity_fee_receiver: Account<'info, TokenAccount>,
+    pub borrow_reserve_liquidity_fee_receiver: Box<Account<'info, TokenAccount>>,
 
     #[account(
         constraint = obligation.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
@@ -39,13 +39,22 @@ pub struct BorrowObligationLiquidity<'info> {
         constraint = !obligation.deposits.is_empty() @ LendingError::ObligatinoDepositsEmpty,
         constraint = obligation.deposited_value != 0 @ LendingError::ObligationDepositsZero,
     )]
-    pub obligation: Account<'info, Obligation>,
-    pub lending_market: Account<'info, LendingMarket>,
+    pub obligation: Box<Account<'info, Obligation>>,
+
+    pub lending_market: Box<Account<'info, LendingMarket>>,
+
+    #[account(
+        seeds = [lending_market.key().as_ref()],
+        bump = lending_market.bump_seed,
+    )]
     /// CHECK:
     pub lending_market_authority: UncheckedAccount<'info>,
+
     pub obligation_owner: Signer<'info>,
+
     /// CHECK:
     pub host_fee_receiver: UncheckedAccount<'info>,
+
     pub token_program: Program<'info, Token>,
 }
 
@@ -84,35 +93,6 @@ pub fn process_borrow_obligation_liquidity(
 ) -> Result<()> {
     require_neq!(liquidity_amount, 0, LendingError::InvalidAmount);
 
-    require_keys_eq!(
-        *ctx.accounts.lending_market.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidMarketOwner
-    );
-    require_keys_eq!(
-        *ctx.accounts.borrow_reserve.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidAccountOwner
-    );
-    require_keys_eq!(
-        *ctx.accounts.obligation.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidAccountOwner
-    );
-
-    let lending_market_authority_pubkey = Pubkey::create_program_address(
-        &[
-            ctx.accounts.lending_market.key().as_ref(),
-            &[ctx.accounts.lending_market.bump_seed],
-        ],
-        ctx.program_id,
-    )
-    .map_err(|_| LendingError::PubkeyError)?;
-    require_keys_eq!(
-        lending_market_authority_pubkey,
-        ctx.accounts.lending_market_authority.key(),
-        LendingError::InvalidMarketAuthority
-    );
     let remaining_borrow_value = ctx.accounts.obligation.remaining_borrow_value()?;
     require_neq!(remaining_borrow_value, 0, LendingError::BorrowTooLarge);
 

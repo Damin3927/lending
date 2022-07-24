@@ -14,7 +14,7 @@ impl CollateralExchangeRate {
 
     pub fn liquidity_to_collateral(&self, liquidity_amount: u64) -> Result<u64, LendingError> {
         liquidity_amount
-            .checked_div(self.0.into())
+            .checked_mul(self.0.into())
             .ok_or(LendingError::InvalidConfig)
     }
 }

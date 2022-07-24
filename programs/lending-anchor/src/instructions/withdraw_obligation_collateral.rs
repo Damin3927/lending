@@ -8,8 +8,9 @@ use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct WithdrawObligationCollateral<'info> {
-    pub source_collateral: Account<'info, TokenAccount>,
-    pub destination_collateral: Account<'info, TokenAccount>,
+    pub source_collateral: Box<Account<'info, TokenAccount>>,
+
+    pub destination_collateral: Box<Account<'info, TokenAccount>>,
 
     #[account(
         constraint = withdraw_reserve.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
@@ -17,21 +18,25 @@ pub struct WithdrawObligationCollateral<'info> {
         constraint = withdraw_reserve.collateral.supply_pubkey != destination_collateral.key() @ LendingError::InvalidAccountInput,
         constraint = !withdraw_reserve.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ReserveStale
     )]
-    pub withdraw_reserve: Account<'info, Reserve>,
+    pub withdraw_reserve: Box<Account<'info, Reserve>>,
 
     #[account(
         constraint = obligation.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
         constraint = obligation.owner == obligation_owner.key() @ LendingError::InvalidAccountInput,
         constraint = !obligation.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ObligationStale
     )]
-    pub obligation: Account<'info, Obligation>,
+    pub obligation: Box<Account<'info, Obligation>>,
 
     #[account(
         constraint = lending_market.token_program_id == token_program.key() @ LendingError::InvalidTokenProgram
     )]
-    pub lending_market: Account<'info, LendingMarket>,
+    pub lending_market: Box<Account<'info, LendingMarket>>,
 
     /// CHECK:
+    #[account(
+        seeds = [lending_market.key().as_ref()],
+        bump = lending_market.bump_seed,
+    )]
     pub lending_market_authority: UncheckedAccount<'info>,
 
     pub obligation_owner: Signer<'info>,
@@ -54,17 +59,6 @@ pub fn process_withdraw_obligation_collateral(
     ctx: Context<WithdrawObligationCollateral>,
     collateral_amount: u64,
 ) -> Result<()> {
-    require_keys_eq!(
-        *ctx.accounts.lending_market.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidMarketOwner
-    );
-    require_keys_eq!(
-        *ctx.accounts.withdraw_reserve.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidMarketOwner
-    );
-
     let (collateral, collateral_index) = ctx
         .accounts
         .obligation
@@ -73,20 +67,6 @@ pub fn process_withdraw_obligation_collateral(
         collateral.deposited_amount,
         0,
         LendingError::ObligationCollateralEmpty
-    );
-
-    let lending_market_authority_pubkey = Pubkey::create_program_address(
-        &[
-            ctx.accounts.lending_market.key().as_ref(),
-            &[ctx.accounts.lending_market.bump_seed],
-        ],
-        ctx.program_id,
-    )
-    .map_err(|_| LendingError::PubkeyError)?;
-    require_keys_eq!(
-        ctx.accounts.lending_market_authority.key(),
-        lending_market_authority_pubkey,
-        LendingError::InvalidMarketAuthority
     );
 
     let withdraw_amount = if ctx.accounts.obligation.borrows.is_empty() {

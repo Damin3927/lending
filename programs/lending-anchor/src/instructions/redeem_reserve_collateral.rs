@@ -11,21 +11,30 @@ pub struct RedeemReserveCollateral<'info> {
     pub destination_liquidity: Box<Account<'info, TokenAccount>>,
 
     #[account(
-        constraint = reserve.lending_market == lending_market.key()
-        && reserve.collateral.mint_pubkey == reserve_collateral_mint.key()
-        && reserve.collateral.supply_pubkey != source_collateral.key()
-        && reserve.liquidity.supply_pubkey == reserve_liquidity_supply.key()
-        && reserve.liquidity.supply_pubkey != destination_liquidity.key()
+        constraint = !reserve.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ReserveStale,
+        constraint = reserve.collateral.mint_pubkey == reserve_collateral_mint.key() @ LendingError::InvalidAccountInput,
+        constraint = reserve.collateral.supply_pubkey != source_collateral.key() @ LendingError::InvalidAccountInput,
+        constraint = reserve.liquidity.supply_pubkey == reserve_liquidity_supply.key() @ LendingError::InvalidAccountInput,
+        constraint = reserve.liquidity.supply_pubkey != destination_liquidity.key() @ LendingError::InvalidAccountInput,
     )]
     pub reserve: Box<Account<'info, Reserve>>,
     pub reserve_collateral_mint: Box<Account<'info, Mint>>,
     pub reserve_liquidity_supply: Box<Account<'info, TokenAccount>>,
+
+    #[account(
+        address = reserve.lending_market,
+    )]
     pub lending_market: Box<Account<'info, LendingMarket>>,
 
     /// CHECK:
+    #[account(
+        seeds = [lending_market.key().as_ref()],
+        bump = lending_market.bump_seed,
+    )]
     pub lending_market_authority: UncheckedAccount<'info>,
     /// CHECK:
     pub user_transfer_authority: UncheckedAccount<'info>,
+
     pub token_program: Program<'info, Token>,
 }
 
@@ -56,37 +65,6 @@ pub fn process_redeem_reserve_collateral(
     collateral_amount: u64,
 ) -> Result<()> {
     require_gt!(collateral_amount, 0);
-    require_keys_eq!(
-        ctx.accounts.lending_market.owner.key(),
-        *ctx.program_id,
-        LendingError::InvalidMarketOwner
-    );
-    require_keys_eq!(
-        ctx.accounts.reserve.to_account_info().owner.key(),
-        *ctx.program_id,
-        LendingError::InvalidMarketOwner
-    );
-    require!(
-        !ctx.accounts
-            .reserve
-            .last_update
-            .is_stale(Clock::get()?.slot)?,
-        LendingError::ReserveStale
-    );
-
-    let lending_market_authority_pubkey = Pubkey::create_program_address(
-        &[
-            ctx.accounts.lending_market.key().as_ref(),
-            &[ctx.accounts.lending_market.bump_seed],
-        ],
-        ctx.program_id,
-    )
-    .map_err(|_| LendingError::PubkeyError)?;
-    require_keys_eq!(
-        ctx.accounts.lending_market_authority.key(),
-        lending_market_authority_pubkey,
-        LendingError::InvalidMarketAuthority
-    );
 
     let liquidity_amount = ctx.accounts.reserve.redeem_collateral(collateral_amount)?;
     ctx.accounts.reserve.last_update.mark_stale();
@@ -94,7 +72,10 @@ pub fn process_redeem_reserve_collateral(
         ctx.accounts.into_burn_user_collateral_ctx(),
         collateral_amount,
     )?;
-    transfer(ctx.accounts.into_transfer_user_liquidity_ctx(), liquidity_amount)?;
+    transfer(
+        ctx.accounts.into_transfer_user_liquidity_ctx(),
+        liquidity_amount,
+    )?;
 
     Ok(())
 }

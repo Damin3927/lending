@@ -11,8 +11,8 @@ use anchor_spl::token::{transfer, Token, TokenAccount, Transfer};
 
 #[derive(Accounts)]
 pub struct RepayObligationLiquidity<'info> {
-    pub source_liquidity: Account<'info, TokenAccount>,
-    pub destination_liquidity: Account<'info, TokenAccount>,
+    pub source_liquidity: Box<Account<'info, TokenAccount>>,
+    pub destination_liquidity: Box<Account<'info, TokenAccount>>,
 
     #[account(
         constraint = repay_reserve.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
@@ -20,18 +20,18 @@ pub struct RepayObligationLiquidity<'info> {
         constraint = repay_reserve.liquidity.supply_pubkey == destination_liquidity.key() @ LendingError::InvalidAccountInput,
         constraint = !repay_reserve.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ReserveStale,
     )]
-    pub repay_reserve: Account<'info, Reserve>,
+    pub repay_reserve: Box<Account<'info, Reserve>>,
 
     #[account(
         constraint = obligation.lending_market.key() == lending_market.key() @ LendingError::InvalidAccountInput,
         constraint = !obligation.last_update.is_stale(Clock::get()?.slot)? @ LendingError::ObligationStale,
     )]
-    pub obligation: Account<'info, Obligation>,
+    pub obligation: Box<Account<'info, Obligation>>,
 
     #[account(
         constraint = lending_market.token_program_id == token_program.key() @ LendingError::InvalidTokenProgram,
     )]
-    pub lending_market: Account<'info, LendingMarket>,
+    pub lending_market: Box<Account<'info, LendingMarket>>,
 
     /// CHECK:
     pub user_transfer_authority: UncheckedAccount<'info>,
@@ -54,22 +54,6 @@ pub fn process_repay_obligation_liquidity(
     liquidity_amount: u64,
 ) -> Result<()> {
     require_neq!(liquidity_amount, 0, LendingError::InvalidAmount);
-
-    require_keys_eq!(
-        *ctx.accounts.lending_market.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidAccountOwner
-    );
-    require_keys_eq!(
-        *ctx.accounts.repay_reserve.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidAccountOwner
-    );
-    require_keys_eq!(
-        *ctx.accounts.obligation.to_account_info().owner,
-        *ctx.program_id,
-        LendingError::InvalidAccountOwner
-    );
 
     let (liquidity, liquidity_index) = ctx
         .accounts
